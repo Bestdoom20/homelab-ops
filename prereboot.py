@@ -5,7 +5,7 @@ It changes nothing and it never reboots anything. Run it as root, and use it as:
 """
 import os, re, sys
 import check_backup, check_disk, check_services
-from common import OK, WARN, CRIT, load_config, report, sh
+from common import OK, WARN, CRIT, failed_units, load_config, report, sh
 
 
 def kernels(files):
@@ -73,7 +73,7 @@ def recovery(cfg):
         down = no_restart(out.splitlines())
         results.append((WARN, 'containers that will NOT come back by themselves: ' + ', '.join(down)) if down
                        else (OK, f'{len(ids)} running containers all restart by themselves'))
-    failed = [line.split()[0] for line in sh(['systemctl', '--failed', '--no-legend', '--plain'])[1].splitlines() if line.strip()]
+    failed = failed_units()
     results.append((WARN, 'failed systemd units: ' + ', '.join(failed)) if failed else (OK, 'no failed systemd units'))
     return results
 

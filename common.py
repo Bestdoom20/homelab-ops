@@ -29,6 +29,11 @@ def sh(cmd, timeout=30):
         return 124, ''
 
 
+def failed_units():
+    out = sh(['systemctl', '--failed', '--no-legend', '--plain'])[1]
+    return [line.split()[0] for line in out.splitlines() if line.strip()]
+
+
 def worst(results):
     return max((level for level, _ in results), default=OK)
 

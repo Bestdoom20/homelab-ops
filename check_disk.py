@@ -41,7 +41,7 @@ def run(cfg):
         pct = used_pct(u.used, u.free)
         lv = level(pct, d['warn_pct'], d['crit_pct'])
         text = f'{mount}: {pct}% used, {u.free // GB} GB free'
-        if lv != OK:
+        if lv != OK and d['top']:  # top 0 skips the scan, which is the slow part
             text += '\n        ' + largest(mount, d['top'])
         results.append((lv, text))
     return results
