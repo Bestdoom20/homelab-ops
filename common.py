@@ -18,10 +18,14 @@ def load_config():
         sys.exit(f'no config at {path}: copy config.example.json to config.json and edit it')
 
 
-def sh(cmd, timeout=30):
-    """Run a command and return (exit code, stdout). A missing tool is 127 and a timeout is 124, never a crash."""
+def sh(cmd, timeout=30, both=False):
+    """Run a command and return (exit code, stdout). A missing tool is 127 and a timeout is 124, never a crash.
+
+    both=True adds stderr to the text, for tools that print their result there.
+    """
     try:
-        r = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+        r = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT if both else subprocess.DEVNULL,
+                           text=True, timeout=timeout)
         return r.returncode, r.stdout
     except FileNotFoundError:
         return 127, ''

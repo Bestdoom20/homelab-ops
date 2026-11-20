@@ -51,7 +51,7 @@ def verdict(results):
 
 def boot():
     results = kernels(os.listdir('/boot'))
-    errors = fstab_errors(sh(['findmnt', '--verify'])[1])
+    errors = fstab_errors(sh(['findmnt', '--verify'], both=True)[1])  # the summary line goes to stderr
     results.append((OK, 'fstab verifies') if errors == 0 else (CRIT, f'fstab does not verify (errors: {errors})'))
     with open('/etc/fstab') as f:
         results += [(CRIT, f'fstab mount {m} has neither nofail nor noauto: a missing device blocks the boot')
