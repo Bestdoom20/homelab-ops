@@ -18,7 +18,7 @@ def render(f):
     crit, warn = (sum(lv == level for lv, _ in results) for level in (CRIT, WARN))
     rows = [('host', f"{f['host']}  {f['time']}"),
             ('uptime', f"{f['uptime_s'] // 86400} days {f['uptime_s'] % 86400 // 3600} h"),
-            ('load', f"{f['load']} on {f['cores']} cores"),
+            ('load', f"{f['load']} on {f['cores']} CPUs"),
             ('memory', f"{used / 1048576:.0f} of {f['mem_total_kb'] / 1048576:.0f} GB used ({100 * used // f['mem_total_kb']}%)"),
             ('disk', fold(f['disk'])),
             ('services', fold(f['services'])),
