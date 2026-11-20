@@ -4,7 +4,7 @@ Five small checks for a Linux server that runs Docker: are the right services up
 
 They come from my home server (Ubuntu 24.04, 16 CPU threads, 24 running containers on the day of the run below). Each check exists because something went wrong once. The originals are shell scripts tied to my own paths and service names. These are simplified ports: same checks, generic, with every path and threshold in a config file.
 
-Python 3, standard library only. Every check is read-only. Nothing here restarts, deletes or reboots anything.
+Python 3, standard library only (the optional e-ink display below needs Pillow). Every check is read-only. Nothing here restarts, deletes or reboots anything.
 
 ## The checks
 
@@ -96,6 +96,49 @@ The manifest for this run was built from the server's own lists: the units named
 
 What to do about each failing line is in [RUNBOOK.md](RUNBOOK.md). Three write-ups of real incidents are in [INCIDENTS.md](INCIDENTS.md).
 
+## E-ink display
+
+![A sample frame drawn from invented data](docs/eink-sample.png)
+
+`eink/eink_monitor.py` draws the state of the server as one picture for an e-ink reader and serves it over HTTP. The picture above is a sample drawn from invented data (`web`, `db`, `media` are not real services). It shows CPU, memory, GPU, the mounts, every service in the manifest with its CPU use, and an alert list. A failing service sorts to the top and turns red. A mount that is not there shows `--`, never a made-up zero. The corner says how often the screen refreshes, and the clock is 12-hour.
+
+It adds no second copy of the logic. Which services are down, which mount is filling up and which backup is stale come from `check_services.py`, `check_disk.py` and `check_backup.py`, so the screen and `status.py` cannot disagree.
+
+**The one optional dependency is Pillow** (`pip install pillow`). It draws the picture. The checks above still need nothing but the standard library, and nothing here runs unless you start it.
+
+Run it:
+
+```bash
+cd eink
+python3 eink_monitor.py selftest          # no server, no network, no device
+python3 eink_monitor.py sample out.png    # one frame from invented data
+python3 eink_monitor.py                   # serve /frame.png
+```
+
+Set `bind` in the `eink` section of `config.json` to the address of the machine that the reader can reach. The default is `localhost`, which only the server itself can see. There is no login, so bind to a private network and nowhere else.
+
+How the reader gets it: `eink/sysmon.koplugin` is a plugin for [KOReader](https://koreader.rocks). Copy the folder into KOReader's plugins folder on the reader, set `BASE` at the top of `main.lua` to the server's address and port, and open Tools > Server monitor. The plugin asks for `/frame.png?w=&h=&every=&bat=` with the reader's own screen size, so the picture always fits, and it prints the reader's battery level in the corner. The server answers with an `X-Refresh` header, and the plugin waits that many seconds before asking again, so the refresh time is changed on the server only. Tap or a page key toggles the frontlight, a swipe closes it. If the server cannot be reached the screen says so instead of leaving an old picture up as if it were live.
+
+The `eink` section of `config.example.json`:
+
+| Key | What it does |
+|---|---|
+| `bind`, `port` | where the server listens |
+| `refresh_seconds` | how often the reader asks again |
+| `variant` | `config` (rows, the default), `glance` (big numbers) or `top` (compact meters and a table) |
+| `theme` | `dark`, or `paper` (black ink on white) |
+| `width`, `height` | screen size in pixels when the reader does not send its own |
+| `title` | the first line of the screen |
+| `mounts` | the mounts to show and to check |
+| `services` | names to show, or `null` for the whole manifest |
+| `warn_pct`, `crit_pct` | where bars turn amber and red |
+| `gpu` | a sysfs folder and a label, or `null` to leave the GPU out. Written for AMD cards; on others the rows read `no reading` |
+| `font` | two monospace font files. The picture is laid out on a character grid, so use a monospace font |
+
+The reader can override `w`, `h`, `v` and `theme` in the address, for example `/frame.png?v=glance&theme=paper`.
+
+Limits: the CPU temperature is read from `thermal_zone0`, which is not the CPU on every machine. Service CPU use comes from `docker stats`, which takes a second or two, so the server keeps one snapshot for ten seconds however many readers ask. The plugin has not been tested on every KOReader version.
+
 ## Design notes
 
 - **One list of what should be running.** A service is expected because it is in the manifest, and for no other reason. A container that runs without being listed gets a warning, so the list cannot quietly go stale.
@@ -107,7 +150,8 @@ What to do about each failing line is in [RUNBOOK.md](RUNBOOK.md). Three write-u
 ## Selftests
 
 ```
-$ for s in check_services.py check_disk.py check_backup.py prereboot.py status.py; do python3 $s selftest; done
+$ for s in check_services.py check_disk.py check_backup.py prereboot.py status.py eink/eink_monitor.py; do python3 $s selftest; done
+selftest ok
 selftest ok
 selftest ok
 selftest ok
