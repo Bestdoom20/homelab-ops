@@ -20,5 +20,24 @@
   },
   "prereboot": {
     "busy_patterns": "restic|rsync|apt-get|dpkg"
+  },
+  "eink": {
+    "bind": "localhost",
+    "port": 8605,
+    "refresh_seconds": 30,
+    "variant": "config",
+    "theme": "dark",
+    "width": 1264,
+    "height": 1680,
+    "title": "SERVER MONITOR",
+    "mounts": ["/", "/data"],
+    "services": null,
+    "warn_pct": 70,
+    "crit_pct": 90,
+    "gpu": {"path": "/sys/class/drm/card0/device/", "name": ""},
+    "font": {
+      "regular": "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
+      "bold": "/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf"
+    }
   }
 }
